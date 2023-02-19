@@ -10,7 +10,7 @@ from torch.optim import lr_scheduler
 from transformers import AutoTokenizer
 
 import utils
-from src.models.encoder import Encoder
+from models.encoder import Encoder
 from data.dataset import Dataset
 
 
