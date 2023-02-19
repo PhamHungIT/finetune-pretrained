@@ -38,13 +38,13 @@ if __name__ == "__main__":
     
     logging.info("Done!\n")
 
-    # labels = sorted(set(df_train['category']))
-    # label2idx = dict(zip(labels, range(len(labels))))
-    # trainer = Trainer(
-    #     config=config,
-    #     df_train=df_train,
-    #     df_val=df_val,
-    #     label2idx=label2idx
-    # )
+    labels = sorted(set(df_train['category']))
+    label2idx = dict(zip(labels, range(len(labels))))
+    trainer = Trainer(
+        config=config,
+        df_train=df_train,
+        df_val=df_val,
+        label2idx=label2idx
+    )
 
-    # trainer.train()
+    trainer.train()
