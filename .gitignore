@@ -1,0 +1,6 @@
+# Ignore data
+data/**
+model/**
+!*.gitkeep
+__pycache__/
+*.ipynb
