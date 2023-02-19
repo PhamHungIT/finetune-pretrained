@@ -1,6 +1,7 @@
-
+import os
 import torch
 import logging
+import shutil
 
 from tqdm import tqdm
 from torch import nn
@@ -9,20 +10,16 @@ from torch.optim import lr_scheduler
 from transformers import AutoTokenizer
 
 import utils
-from models.encode import Encode
+from src.models.encoder import Encoder
 from data.dataset import Dataset
 
 
 class Trainer:
     
-    def __init__(self, df_train, df_val, label2idx, config) -> None:
-        
-        """ Data """
-        self.train_data = df_train
-        self.val_data = df_val
-        
+    def __init__(self, label2idx, config) -> None:
+                
         """ Model config """
-        self.encode = Encode(
+        self.encoder = Encoder(
             pretrain=config['pretrain'],
             dropout=config['dropout']
         )
@@ -33,18 +30,18 @@ class Trainer:
 
         self.label2idx = label2idx
         self.tokenizer = AutoTokenizer.from_pretrained(config['pretrain'])
-
+        self.config = config
     
-    def train(self):
+    def train(self, df_train, df_val):
         logging.info("Create dataloader")
         train = Dataset(
-            df=self.train_data,
+            df=df_train,
             label2idx=self.label2idx,
             tokenizer=self.tokenizer            
         )
         
         val = Dataset(
-            df = self.val_data,
+            df = df_val,
             label2idx=self.label2idx,
             tokenizer=self.tokenizer 
         )
@@ -65,7 +62,7 @@ class Trainer:
         device = torch.device("cuda" if use_cuda else "cpu")
         logging.info(f"Training on GPU: {use_cuda} - Device: {device}")
         criterion = nn.CrossEntropyLoss()
-        optimizer = Adam(self.encode.parameters(), lr=self.learning_rate)
+        optimizer = Adam(self.encoder.parameters(), lr=self.learning_rate)
 
         # scheduler = lr_scheduler.StepLR(optimizer, 1.0, gamma=0.1)
         scheduler = lr_scheduler.CosineAnnealingWarmRestarts(
@@ -77,72 +74,92 @@ class Trainer:
         )
         if use_cuda:
 
-                self.encode = self.encode.cuda()
+                self.encoder = self.encoder.cuda()
                 criterion = criterion.cuda()
         
-        self.encode.train()
-        
+        self.encoder.train()
+        best_acc_val = 0
         for epoch_num in range(self.epochs):
 
-                self.encode.train()
+            self.encoder.train()
 
-                total_acc_train = 0
-                total_loss_train = 0
-                for train_input, train_label in tqdm(
-                    train_dataloader,
-                    colour='green',
-                    desc=f"Epoch: {epoch_num + 1}/{self.epochs}"
-                ):
-                    optimizer.zero_grad()
-                    
-                    train_label = train_label.to(device)
-                    mask = train_input['attention_mask'].to(device)
-                    input_id = train_input['input_ids'].squeeze(1).to(device)
-                    output = self.encode(input_id, mask)
-                    
-                    # batch_loss = criterion(output, train_label.long())
-                    batch_loss = criterion(output, train_label)
-                    total_loss_train += batch_loss.item()
-                    
-                    acc = (output.argmax(dim=1) == train_label).sum().item()
-                    total_acc_train += acc
-
-                    batch_loss.backward()
-                    optimizer.step()
-                    
-                    scheduler.step()
+            total_acc_train = 0
+            total_loss_train = 0
+            for train_input, train_label in tqdm(
+                train_dataloader,
+                colour='green',
+            ):
+                optimizer.zero_grad()
                 
-
-                """ Validate """
-                self.encode.eval()
+                train_label = train_label.to(device)
+                mask = train_input['attention_mask'].to(device)
+                input_id = train_input['input_ids'].squeeze(1).to(device)
+                output = self.encoder(input_id, mask)
                 
-                total_acc_val = 0
-                total_loss_val = 0
-
-                with torch.no_grad():
-
-                    for val_input, val_label in val_dataloader:
-
-                        val_label = val_label.to(device)
-                        mask = val_input['attention_mask'].to(device)
-                        input_id = val_input['input_ids'].squeeze(1).to(device)
-
-                        output = self.encode(input_id, mask)
-
-                        batch_loss = criterion(output, val_label)
-                        total_loss_val += batch_loss.item()
-                        
-                        acc = (output.argmax(dim=1) == val_label).sum().item()
-                        total_acc_val += acc
+                # batch_loss = criterion(output, train_label.long())
+                batch_loss = criterion(output, train_label)
+                total_loss_train += batch_loss.item()
                 
-                loss_train = total_loss_train / len(self.train_data)
-                acc_train = total_acc_train / len(self.train_data)
-                loss_val = total_loss_val / len(self.val_data)
-                acc_val = total_acc_val / len(self.val_data)
+                acc = (output.argmax(dim=1) == train_label).sum().item()
+                total_acc_train += acc
 
-                logging.info(
-                    f'Epochs: {epoch_num + 1} | Train Loss: {loss_train: .3f} \
-                    | Train Accuracy: {acc_train: .3f} \
-                    | Val Loss: {loss_val: .3f} \
-                    | Val Accuracy: {acc_val: .3f}')
+                batch_loss.backward()
+                optimizer.step()
+                
+                scheduler.step()
+            
+
+            """ Validate """
+            self.encoder.eval()
+            
+            total_acc_val = 0
+            total_loss_val = 0
+
+            with torch.no_grad():
+
+                for val_input, val_label in val_dataloader:
+
+                    val_label = val_label.to(device)
+                    mask = val_input['attention_mask'].to(device)
+                    input_id = val_input['input_ids'].squeeze(1).to(device)
+
+                    output = self.encoder(input_id, mask)
+
+                    batch_loss = criterion(output, val_label)
+                    total_loss_val += batch_loss.item()
+                    
+                    acc = (output.argmax(dim=1) == val_label).sum().item()
+                    total_acc_val += acc
+            
+            loss_train = total_loss_train / len(train)
+            acc_train = total_acc_train / len(train)
+            loss_val = total_loss_val / len(val)
+            acc_val = total_acc_val / len(val)
+
+            logging.info(
+                f'Epochs: {epoch_num + 1} | Train Loss: {loss_train: .3f} \
+                | Train Accuracy: {acc_train: .3f} \
+                | Val Loss: {loss_val: .3f} \
+                | Val Accuracy: {acc_val: .3f}')
+            
+            """Save checkpoints"""
+            if acc_val > best_acc_val:
+                logging.info("Found better model!")
+                self.save_checkpoint(is_best=True)
+        self.save_checkpoint(is_best=False)
+
+
+    def save_checkpoint(self, is_best):
+        state = {
+            "config": self.config,
+            "label2idx": self.label2idx,
+            "state_dict": self.encoder.state_dict()
+        }
+
+        checkpoint_dir = self.config['checkpoint_dir']
+        file_path = os.path.join(checkpoint_dir, "last.pt")
+        with open(file_path, 'wb') as f:
+            torch.save(state, f, _use_new_zipfile_serialization=False)
         
+        if is_best:
+            shutil.copyfile(file_path, os.path.join(checkpoint_dir, 'best.pt'))

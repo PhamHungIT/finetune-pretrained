@@ -1,11 +1,11 @@
 from torch import nn
 from transformers import AutoModel
 
-class Encode(nn.Module):
+class Encoder(nn.Module):
 
-    def __init__(self, pretrain, dropout=0.5):
+    def __init__(self, pretrain, dropout):
 
-        super(Encode, self).__init__()
+        super(Encoder, self).__init__()
 
         self.pretrain = AutoModel.from_pretrained(pretrain)
         self.dropout = nn.Dropout(dropout)

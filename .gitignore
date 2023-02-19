@@ -1,6 +1,7 @@
 # Ignore data
 data/**
 model/**
+checkpoints/**
 !*.gitkeep
 __pycache__/
 *.ipynb
