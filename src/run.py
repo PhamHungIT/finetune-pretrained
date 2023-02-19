@@ -23,7 +23,7 @@ if __name__ == "__main__":
     )
 
     # Set logger
-    utils.set_logger(os.path.join(config['model_dir'], 'train.log'))
+    utils.set_logger(os.path.join(config['checkpoint_dir'], 'train.log'))
     logging.info("Loading dataset...")
     # Load data for training
     df_train = pd.read_csv(args.train_path)
