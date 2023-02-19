@@ -57,7 +57,7 @@ class Trainer:
         logging.info(f"Data train: {len(train)}")
         logging.info(f"Data val: {len(val)}")
         logging.info(
-            "Config:\n\t" +
+            "\nConfig:\n\t" +
             str('\n\t'.join("{}: {}".format(str(k), str(v)) for k, v in self.config.items()))
         )
 
@@ -150,6 +150,50 @@ class Trainer:
                 logging.info("Found better model!")
                 self.save_checkpoint(is_best=True)
         self.save_checkpoint(is_best=False)
+
+    def evaluate(self, df_test):
+
+        test = Dataset(
+            df = df_test,
+            label2idx=self.label2idx,
+            tokenizer=self.tokenizer 
+        )
+
+        test_dataloader = torch.utils.data.DataLoader(
+            test,
+            batch_size=self.batch_size,
+            shuffle=True
+        )
+
+        logging.info(f"Data test: {len(test)}")
+        logging.info(
+            "\nConfig:\n\t" +
+            str('\n\t'.join("{}: {}".format(str(k), str(v)) for k, v in self.config.items()))
+        )
+
+        use_cuda = torch.cuda.is_available()
+        device = torch.device("cuda" if use_cuda else "cpu")
+        logging.info(f"Inferring on GPU: {use_cuda} - Device: {device}")
+        if use_cuda:
+            self.encoder = self.encoder.cuda()
+
+        self.encoder.eval()
+            
+        total_acc_val = 0
+        with torch.no_grad():
+
+            for test_input, test_label in tqdm(test_dataloader):
+
+                test_label = test_label.to(device)
+                mask = test_input['attention_mask'].to(device)
+                input_id = test_input['input_ids'].squeeze(1).to(device)
+
+                output = self.encoder(input_id, mask)
+                acc = (output.argmax(dim=1) == test_label).sum().item()
+                total_acc_val += acc
+        
+        acc_test = total_acc_val / len(test)
+        logging.info(f"Accuracy test is {str(acc_test)}")
 
 
     def save_checkpoint(self, is_best):
