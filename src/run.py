@@ -37,7 +37,7 @@ if __name__ == "__main__":
             test_size=0.2,
             random_state=100
         )
-    
+    df_val.to_csv(os.path.join(config['checkpoint_dir'], 'sample_test.csv'), index=False)
     logging.info("Done!\n")
 
     labels = sorted(set(df_train['category']))
