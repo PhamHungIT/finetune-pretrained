@@ -9,7 +9,6 @@ from torch.optim import Adam
 from torch.optim import lr_scheduler
 from transformers import AutoTokenizer
 
-import utils
 from models.encoder import Encoder
 from data.dataset import Dataset
 
@@ -33,7 +32,7 @@ class Trainer:
         self.config = config
     
     def train(self, df_train, df_val):
-        logging.info("Create dataloader")
+        logging.info("\nCreate dataloader")
         train = Dataset(
             df=df_train,
             label2idx=self.label2idx,
@@ -57,7 +56,11 @@ class Trainer:
         )
         logging.info(f"Data train: {len(train)}")
         logging.info(f"Data val: {len(val)}")
-        logging.info("Done!")
+        logging.info(
+            "Config:\n\t" +
+            str('\n\t'.join("{}: {}".format(str(k), str(v)) for k, v in self.config.items()))
+        )
+
         use_cuda = torch.cuda.is_available()
         device = torch.device("cuda" if use_cuda else "cpu")
         logging.info(f"Training on GPU: {use_cuda} - Device: {device}")
