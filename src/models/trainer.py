@@ -22,6 +22,7 @@ class Trainer:
             pretrain=config['pretrain'],
             dropout=config['dropout']
         )
+        self.encoder = torch.nn.DataParallel(self.encoder)
 
         self.epochs = config['epochs']
         self.batch_size = config['batch_size']
