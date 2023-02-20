@@ -52,7 +52,7 @@ if __name__ == "__main__":
         state = torch.load(args.checkpoint_path, map_location=device)
         trainer = Trainer(
             label2idx=state['label2idx'],
-            config=state['config']
+            config=config
         )
         trainer.encoder.load_state_dict(state['state_dict'])
     else:
