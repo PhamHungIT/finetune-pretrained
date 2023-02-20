@@ -3,7 +3,7 @@ dropout: 0.5
 epochs: 10
 batch_size: 2
 learning_rate: 0.00001
-checkpoint_dir: "../checkpoints/demo"
+# checkpoint_dir: "../checkpoints/demo"
 # model:
 #   pretrain: "vinai/phobert-base"
 # training_config:

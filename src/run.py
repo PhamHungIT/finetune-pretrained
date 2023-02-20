@@ -8,25 +8,28 @@ from sklearn.model_selection import train_test_split
 
 import utils
 
+parser = argparse.ArgumentParser()
+parser.add_argument("--train_path")
+parser.add_argument("--val_path")
+parser.add_argument("--checkpoint_dir")
+parser.add_argument("--checkpoint_path")
+
+args = parser.parse_args()
+
 # Load the config model
 config = utils.load_config(
     config_path='../config.yml'
 )
 
+config['checkpoint_dir'] = args.checkpoint_dir
 # Set logger
 log_path = os.path.join(config['checkpoint_dir'], 'train.log')
 utils.set_logger(log_path=log_path)
 
 from models.trainer import Trainer
 
-parser = argparse.ArgumentParser()
-parser.add_argument("--train_path")
-parser.add_argument("--val_path")
-parser.add_argument("--checkpoint_path")
 
 if __name__ == "__main__":
-
-    args = parser.parse_args()
 
     # Load data for training
     logging.info("Loading dataset...")
