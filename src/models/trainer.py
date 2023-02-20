@@ -22,7 +22,6 @@ class Trainer:
             pretrain=config['pretrain'],
             dropout=config['dropout']
         )
-        self.encoder = torch.nn.DataParallel(self.encoder)
 
         self.epochs = config['epochs']
         self.batch_size = config['batch_size']
@@ -33,6 +32,8 @@ class Trainer:
         self.config = config
     
     def train(self, df_train, df_val):
+        self.encoder = torch.nn.DataParallel(self.encoder)
+
         logging.info("\nCreate dataloader")
         train = Dataset(
             df=df_train,
