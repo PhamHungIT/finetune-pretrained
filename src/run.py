@@ -3,6 +3,7 @@ import argparse
 import logging
 
 import pandas as pd
+import torch
 from sklearn.model_selection import train_test_split
 
 import utils
@@ -21,6 +22,7 @@ from models.trainer import Trainer
 parser = argparse.ArgumentParser()
 parser.add_argument("--train_path")
 parser.add_argument("--val_path")
+parser.add_argument("--checkpoint_path")
 
 if __name__ == "__main__":
 
@@ -43,10 +45,21 @@ if __name__ == "__main__":
 
     labels = sorted(set(df_train['category']))
     label2idx = dict(zip(labels, range(len(labels))))
-    trainer = Trainer(
-        config=config,
-        label2idx=label2idx
-    )
+
+    if args.checkpoint_path != None:
+        use_cuda = torch.cuda.is_available()
+        device = torch.device("cuda" if use_cuda else "cpu")
+        state = torch.load(args.checkpoint_path, map_location=device)
+        trainer = Trainer(
+            label2idx=state['label2idx'],
+            config=state['config']
+        )
+        trainer.encoder.load_state_dict(state['state_dict'])
+    else:
+        trainer = Trainer(
+            config=config,
+            label2idx=label2idx
+        )
 
     trainer.train(
         df_train=df_train,
