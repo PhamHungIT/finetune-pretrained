@@ -1,5 +1,7 @@
-import yaml
 import logging
+
+import yaml
+import pandas as pd
 
 
 def load_config(config_path):
@@ -32,3 +34,26 @@ def set_logger(log_path):
         stream_handler = logging.StreamHandler()
         stream_handler.setFormatter(logging.Formatter('%(message)s'))
         logger.addHandler(stream_handler)
+
+
+def load_csv(csv_file, col_text, col_category, sep):
+    """Load csv file, convert data to dictionary
+
+    Args:
+        csv_file: path to csv data
+        col_text: column containing sentences
+        col_category: column containing labels
+        sep: delimiter between 2 columns
+    """
+
+    df = pd.read_csv(csv_file, sep=sep)
+    msg = "Not exist columns {} and {} in your data!".format(
+        col_text,
+        col_category
+    )
+    assert col_text in list(df.columns) and col_category in list(df.columns), msg
+    data = {
+        "text": list(df[col_text].values),
+        "category": list(df[col_category].values)
+    }
+    return data
