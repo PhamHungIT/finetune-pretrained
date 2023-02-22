@@ -9,8 +9,10 @@ class Encoder(nn.Module):
 
         self.pretrain = AutoModel.from_pretrained(pretrain)
         self.dropout = nn.Dropout(dropout)
-        self.linear = nn.Linear(768, 5)
+        self.linear1 = nn.Linear(768, 256)
         self.relu = nn.ReLU()
+        self.linear2 = nn.Linear(256, 5)
+        self.sm = nn.Softmax()
 
     def forward(self, input_id, mask):
 
@@ -20,7 +22,10 @@ class Encoder(nn.Module):
             return_dict=False
         )
         dropout_output = self.dropout(pooled_output)
-        linear_output = self.linear(dropout_output)
-        final_layer = self.relu(linear_output)
+        hidden_state1 = self.linear1(dropout_output)
+        hidden_state2 = self.relu(hidden_state1)
+        hidden_state3 = self.linear2(hidden_state2)
+
+        final_layer = self.sm(hidden_state3)
 
         return final_layer

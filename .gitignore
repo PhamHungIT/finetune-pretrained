@@ -5,3 +5,4 @@ checkpoints/**
 !*.gitkeep
 __pycache__/
 *.ipynb
+!stop_words.txt
