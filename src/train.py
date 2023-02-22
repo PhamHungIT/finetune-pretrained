@@ -34,8 +34,10 @@ if __name__ == "__main__":
     # Load data for training
     logging.info("Loading dataset...")
     df_train = pd.read_csv(args.train_path)
+    df_train.dropna(inplace=True)
     if args.val_path != None:
         df_val = pd.read_csv(args.val_path)
+        df_val.dropna(inplace=True)
     else:
         df_train, df_val = train_test_split(
             df_train,
