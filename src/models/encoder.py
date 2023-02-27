@@ -1,5 +1,51 @@
+import math
+
+import torch
+import torch.nn.functional as F
 from torch import nn
 from transformers import AutoModel
+
+class MLP(nn.Module):
+
+    def __init__(self, config):
+        super(MLP, self).__init__()
+        self.label_size = config['label_size']
+        self.hidden_size = config['hidden_size']
+        self.max_words = config['max_words']
+        self.dropout_prob = config['dropout']
+
+        self.dropout = nn.Dropout(self.dropout_prob)
+        self.layer1 = nn.Parameter(
+            torch.FloatTensor(self.hidden_size, self.max_words)
+        )
+        self.b1 = nn.Parameter(torch.FloatTensor(self.hidden_size))
+        self.layer2 = nn.Parameter(
+            torch.FloatTensor(self.label_size, self.hidden_size)
+        )
+        self.b2 = nn.Parameter(torch.FloatTensor(self.label_size))
+
+        self.reset_parameters()
+
+    def reset_parameters(self):
+        """
+        Reset parameters
+        :return:
+        """
+        std_v1 = 1.0 / math.sqrt(self.hidden_size)
+        self.layer1.data.uniform_(-std_v1, std_v1)
+        self.b1.data.uniform_(-std_v1, std_v1)
+
+        std_v2 = 1.0 / math.sqrt(self.label_size)
+        self.layer2.data.uniform_(-std_v2, std_v2)
+        self.b2.data.uniform_(-std_v2, std_v2)
+
+    def forward(self, input_ids):
+        layer1_output = F.relu(F.linear(input_ids, self.layer1, self.b1))
+        layer1_output = self.dropout(layer1_output)
+        logit = F.linear(layer1_output, self.layer2, self.b2)
+        return logit
+
+
 
 class Encoder(nn.Module):
 

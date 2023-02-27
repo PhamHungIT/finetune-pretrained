@@ -2,9 +2,11 @@ import os
 import argparse
 import logging
 
-import pandas as pd
 import torch
+import pandas as pd
 from sklearn.model_selection import train_test_split
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.feature_extraction.text import TfidfVectorizer
 
 import utils
 
@@ -47,8 +49,21 @@ if __name__ == "__main__":
         
     logging.info("Done!\n")
 
+
+
+    if args.vectorizer == 'tf-idf':
+        tf_idf = TfidfVectorizer()
+        vectorizer = tf_idf.fit(df_train['text'].tolist())
+
+    text_pipeline = lambda text: vectorizer.transform([text]).toarray()[0]
+    label_pipeline = lambda label: label2idx[label]
+    
+    
+    
     labels = sorted(set(df_train['category']))
     label2idx = dict(zip(labels, range(len(labels))))
+
+
 
     if args.checkpoint_path != None:
         use_cuda = torch.cuda.is_available()
