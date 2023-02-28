@@ -1,19 +1,10 @@
-pretrain: "vinai/phobert-base"
-dropout: 0.5
-epochs: 10
-batch_size: 2
-learning_rate: 0.00001
-# checkpoint_dir: "../checkpoints/demo"
-# model:
-#   pretrain: "vinai/phobert-base"
-# training_config:
-#   checkpoint_dir: 'experiments/compare_demo'
-#   learning_rate: 0.001
-#   num_epochs: 10
-#   train_batch_size: 128
-#   eval_batch_size: 128
-#   gpu: -1
-#   logging_steps: 100
-#   eval_steps: 1000
-#   save_steps: 3000
-#   save_best: True
+word2vec:
+  vector_size: 512
+  sg: 0
+  min_count: 2
+model:
+  pretrain: "vinai/phobert-base"
+  dropout: 0.5
+  epochs: 10
+  batch_size: 2
+  learning_rate: 0.00001
