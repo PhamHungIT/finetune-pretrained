@@ -1,13 +1,13 @@
-word2vec:
-  vector_size: 512
+vectorizer:
+  vector_size: 16384
   sg: 0
   min_count: 2
+
 model:
+  use_pretrain: 0
   pretrain: "vinai/phobert-base"
   batch_size: 256
   dropout: 0.5
-  epochs: 20
+  epochs: 50
   learning_rate: 0.001
-  label_size: 6
   hidden_size: 256
-  use_pretrain: 0
