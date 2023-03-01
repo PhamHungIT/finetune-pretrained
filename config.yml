@@ -4,7 +4,10 @@ word2vec:
   min_count: 2
 model:
   pretrain: "vinai/phobert-base"
+  batch_size: 256
   dropout: 0.5
-  epochs: 10
-  batch_size: 2
-  learning_rate: 0.00001
+  epochs: 20
+  learning_rate: 0.001
+  label_size: 6
+  hidden_size: 256
+  use_pretrain: 0

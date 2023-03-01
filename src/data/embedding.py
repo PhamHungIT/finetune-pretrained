@@ -31,19 +31,21 @@ class Embedding:
             self.corpus = [s.split() for s in self.corpus]
             self.vectorizer = Word2Vec(
                 sentences=self.corpus,
-                vector_size=256,
+                vector_size=8192,
                 min_count=1,
                 workers=os.cpu_count() - 1
             )
-            self.embedding_dim = 256
+            self.embedding_dim = 8192
 
         elif self.type == 'bow':
             self.vectorizer = CountVectorizer()
             self.vectorizer.fit(self.corpus)
+            self.embedding_dim = len(self.vectorizer.vocabulary_)
 
         elif self.type == 'tf_idf':
             self.vectorizer = TfidfVectorizer()
             self.vectorizer.fit(self.corpus)
+            self.embedding_dim = len(self.vectorizer.vocabulary_)
 
     def __call__(self, sentence):
         """

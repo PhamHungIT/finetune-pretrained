@@ -8,7 +8,7 @@ utils.set_logger(
     log_path='../checkpoints/evaluate.log'
 )
 
-from models.trainer import Trainer
+from src.models.old_trainer import Trainer
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--test_path")

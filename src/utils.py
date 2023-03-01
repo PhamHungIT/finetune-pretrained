@@ -2,7 +2,11 @@ import logging
 
 import yaml
 import pandas as pd
+from sklearn.model_selection import train_test_split
+from tqdm import tqdm
+tqdm.pandas(desc="Preprocessing")
 
+from data.preprocess import clean_text
 
 def load_config(config_path):
     with open(config_path, 'r') as fi:
@@ -36,24 +40,38 @@ def set_logger(log_path):
         logger.addHandler(stream_handler)
 
 
-def load_csv(csv_file, col_text, col_category, sep):
-    """Load csv file, convert data to dictionary
+def load_csv(
+        train_file,
+        val_file=None,
+        text_col='text',
+        label_col='category',
+    ):
+    """Load, split data
 
     Args:
-        csv_file: path to csv data
-        col_text: column containing sentences
+        train_file: path to csv data train
+        val_file: path to csv data validate
+        text_col: column containing sentences
         col_category: column containing labels
         sep: delimiter between 2 columns
     """
+    df_train = pd.read_csv(train_file)
+    df_train = df_train[[text_col, label_col]]
+    df_train.dropna(inplace=True)
+    if val_file != None:
+        df_val = pd.read_csv(val_file)
+        df_val.dropna(inplace=True)
+    else:
+        df_train, df_val = train_test_split(
+            df_train,
+            test_size=0.2,
+            random_state=100
+        )
 
-    df = pd.read_csv(csv_file, sep=sep)
-    msg = "Not exist columns {} and {} in your data!".format(
-        col_text,
-        col_category
-    )
-    assert col_text in list(df.columns) and col_category in list(df.columns), msg
-    data = {
-        "text": list(df[col_text].values),
-        "category": list(df[col_category].values)
-    }
-    return data
+    df_train[text_col] = df_train[text_col].progress_apply(clean_text)
+    df_train.drop_duplicates(subset=text_col, inplace=True)
+    
+    df_val[text_col] = df_val[text_col].progress_apply(clean_text)
+    df_val.drop_duplicates(subset=text_col, inplace=True)
+
+    return df_train, df_val
