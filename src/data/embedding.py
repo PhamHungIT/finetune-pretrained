@@ -20,30 +20,31 @@ class Embedding:
         """
         self.type = type
 
-    def fit(self, corpus):
+    def fit(self, corpus, config):
         """
         Create transform for converting word to vector
         Args:
             corpus: (list) List of sentences
+            config: (dict) param for vectorizer
         """
         self.corpus = corpus
         if self.type == 'word2vec':
             self.corpus = [s.split() for s in self.corpus]
             self.vectorizer = Word2Vec(
                 sentences=self.corpus,
-                vector_size=8192,
-                min_count=1,
+                vector_size=config['vector_size'],
+                min_count=config['min_count'],
                 workers=os.cpu_count() - 1
             )
-            self.embedding_dim = 8192
+            self.embedding_dim = config['vector_size']
 
         elif self.type == 'bow':
-            self.vectorizer = CountVectorizer()
+            self.vectorizer = CountVectorizer(min_df=config['min_count'])
             self.vectorizer.fit(self.corpus)
             self.embedding_dim = len(self.vectorizer.vocabulary_)
 
         elif self.type == 'tf_idf':
-            self.vectorizer = TfidfVectorizer()
+            self.vectorizer = TfidfVectorizer(min_df=config['min_count'])
             self.vectorizer.fit(self.corpus)
             self.embedding_dim = len(self.vectorizer.vocabulary_)
 

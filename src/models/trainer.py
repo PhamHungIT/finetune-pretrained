@@ -18,17 +18,18 @@ class Trainer:
     def __init__(self, label2idx, config) -> None:
                 
         """ Model config """
-        self.encoder = MLP(
-            config=config
-        )
+        
 
         self.epochs = config['epochs']
         self.batch_size = config['batch_size']
         self.learning_rate = config['learning_rate']
 
         self.label2idx = label2idx
+        config['num_labels'] = len(label2idx)
         self.config = config
-    
+        self.encoder = MLP(
+            config=config
+        )
     def train(self, train_dataloader, val_dataloader):
         
         use_cuda = torch.cuda.is_available()
@@ -81,7 +82,6 @@ class Trainer:
             total_loss_val = 0
 
             with torch.no_grad():
-
                 for label_ids, text_embeddings  in val_dataloader:
 
                     predicted_labels = self.encoder(text_embeddings)
@@ -103,7 +103,22 @@ class Trainer:
                 | Val Accuracy: {acc_val: .3f}')
             
             """Save checkpoints"""
-        #     if acc_val > best_acc_val:
-        #         logging.info("Found better model!")
-        #         self.save_checkpoint(is_best=True)
-        # self.save_checkpoint(is_best=False)
+            if acc_val > best_acc_val:
+                logging.info("Found better model!")
+                self.save_checkpoint(is_best=True)
+        self.save_checkpoint(is_best=False)
+
+    def save_checkpoint(self, is_best):
+        state = {
+            "config": self.config,
+            "label2idx": self.label2idx,
+            "state_dict": self.encoder.state_dict()
+        }
+
+        checkpoint_dir = self.config['checkpoint_dir']
+        file_path = os.path.join(checkpoint_dir, "last.pt")
+        with open(file_path, 'wb') as f:
+            torch.save(state, f, _use_new_zipfile_serialization=False)
+        
+        if is_best:
+            shutil.copyfile(file_path, os.path.join(checkpoint_dir, 'best.pt'))
