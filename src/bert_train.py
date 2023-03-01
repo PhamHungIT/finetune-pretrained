@@ -7,7 +7,7 @@ from torch.utils.data import DataLoader
 
 import utils
 from data.dataset import Dataset
-from transformers im 
+from transformers import AutoTokenizer 
 
 from models.trainer import Trainer
 
@@ -60,20 +60,10 @@ if __name__ == "__main__":
     )
     logging.info("Done!\n")
 
-    # Create vectorizer, label encoder
-    embedding = Embedding(type=args.vectorizer)
-    embedding.fit(
-        corpus=df_train[args.text_col].tolist(),
-        config=config['vectorizer']
-    )
-    model_config['embedding_dim'] = embedding.embedding_dim
-    model_config['len_train'] = len(df_train)
-    model_config['len_val'] = len(df_val)
-    
-    logging.info("Vectorizer: {}".format(args.vectorizer))
-    logging.info("Embedding dimension: {}".format(embedding.embedding_dim))
-    labels = sorted(set(df_train[args.label_col]))
-    label2idx = dict(zip(labels, range(len(labels))))
+    # Tokenizer
+
+    tokenizer = AutoTokenizer.from_pretrained(model_config['pretrain'])
+
 
     # Create dataloader
     train_dataset = Dataset(
