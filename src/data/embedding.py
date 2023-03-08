@@ -1,5 +1,6 @@
 
 import os
+import pickle
 
 import numpy as np
 from gensim.models import Word2Vec
@@ -29,23 +30,23 @@ class Embedding:
         """
         self.corpus = corpus
         if self.type == 'word2vec':
+            self.embedding_dim = 300
             self.corpus = [s.split() for s in self.corpus]
             self.vectorizer = Word2Vec(
                 sentences=self.corpus,
-                vector_size=config['vector_size'],
-                min_count=config['min_count'],
+                vector_size=self.embedding_dim,
+                min_count=1,
                 workers=os.cpu_count() - 1
             )
-            self.embedding_dim = config['vector_size']
 
         elif self.type == 'bow':
             self.vectorizer = CountVectorizer(min_df=config['min_count'])
-            self.vectorizer.fit(self.corpus)
+            self.vectorizer = self.vectorizer.fit(self.corpus)
             self.embedding_dim = len(self.vectorizer.vocabulary_)
 
         elif self.type == 'tf_idf':
             self.vectorizer = TfidfVectorizer(min_df=config['min_count'])
-            self.vectorizer.fit(self.corpus)
+            self.vectorizer = self.vectorizer.fit(self.corpus)
             self.embedding_dim = len(self.vectorizer.vocabulary_)
 
     def __call__(self, sentence):
@@ -75,3 +76,24 @@ class Embedding:
             embedding_sentence = embedding_sentence.toarray()[0]
 
         return embedding_sentence
+
+
+    def save(self, dir):
+        
+        if self.type == 'word2vec':
+            path = os.path.join(dir, "w2v.model")
+            self.vectorizer.save(path)
+        else:
+            path = os.path.join(dir, '{}.pickle'.format(self.type))
+            with open(path, "wb") as fo:
+                pickle.dump(self.vectorizer, fo)
+
+    def load(self, path):
+        
+        if self.type == 'word2vec':
+            self.embedding_dim = 512
+            self.vectorizer = Word2Vec.load(path)
+        else:
+
+            with open(path, "rb") as fi:
+                self.vectorizer = pickle.load(fi)

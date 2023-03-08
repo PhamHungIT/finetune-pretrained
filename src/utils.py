@@ -45,6 +45,7 @@ def load_csv(
         val_file=None,
         text_col='text',
         label_col='category',
+        sep='\t'
     ):
     """Load, split data
 
@@ -55,11 +56,11 @@ def load_csv(
         col_category: column containing labels
         sep: delimiter between 2 columns
     """
-    df_train = pd.read_csv(train_file)
+    df_train = pd.read_csv(train_file, sep=sep)
     df_train = df_train[[text_col, label_col]]
     df_train.dropna(inplace=True)
     if val_file != None:
-        df_val = pd.read_csv(val_file)
+        df_val = pd.read_csv(val_file, sep=sep)
         df_val.dropna(inplace=True)
     else:
         df_train, df_val = train_test_split(

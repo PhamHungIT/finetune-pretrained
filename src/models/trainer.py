@@ -15,28 +15,29 @@ from models.encoder import MLP
 
 class Trainer:
     
-    def __init__(self, label2idx, config) -> None:
+    def __init__(self, config) -> None:
                 
         """ Model config """
-        
 
         self.epochs = config['epochs']
         self.batch_size = config['batch_size']
         self.learning_rate = config['learning_rate']
 
-        self.label2idx = label2idx
-        config['num_labels'] = len(label2idx)
         self.config = config
         self.encoder = MLP(
             config=config
         )
-    def train(self, train_dataloader, val_dataloader):
+        self.encoder = torch.nn.DataParallel(self.encoder)
+
+    def train(self, train_dataloader, val_dataloader, label2idx):
+        
         
         use_cuda = torch.cuda.is_available()
         device = torch.device("cuda" if use_cuda else "cpu")
         logging.info(f"Training on GPU: {use_cuda} - Device: {device}")
         
-        self.encoder = torch.nn.DataParallel(self.encoder)
+        
+        self.label2idx = label2idx
         criterion = nn.CrossEntropyLoss()
         optimizer = Adam(self.encoder.parameters(), lr=self.learning_rate)
         # scheduler = lr_scheduler.StepLR(optimizer, 1.0, gamma=0.1)

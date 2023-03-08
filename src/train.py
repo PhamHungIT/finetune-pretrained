@@ -27,19 +27,22 @@ config = utils.load_config(
     config_path='../config.yml'
 )
 model_config = config['model']
+
+if not os.path.exists(args.checkpoint_dir):
+    os.makedirs(args.checkpoint_dir)
 model_config['checkpoint_dir'] = args.checkpoint_dir
+
 # Set logger
 log_path = os.path.join(model_config['checkpoint_dir'], 'train.log')
 utils.set_logger(log_path=log_path)
 
 
-
 def collate_batch(batch):
     label_list, text_list = [], []
     for (_text, _label) in batch:
-         label_list.append(label2idx[_label])
-         processed_text = torch.tensor(embedding(_text), dtype=torch.float32)
-         text_list.append(processed_text)
+        label_list.append(label2idx[_label])
+        processed_text = torch.tensor(embedding(_text), dtype=torch.float32)
+        text_list.append(processed_text)
     label_list = torch.tensor(label_list, dtype=torch.int64)
     text_list = torch.row_stack(text_list)
     return label_list.to(device), text_list.to(device)
@@ -56,7 +59,8 @@ if __name__ == "__main__":
         train_file=args.train_file,
         val_file=args.val_file,
         text_col=args.text_col,
-        label_col=args.label_col
+        label_col=args.label_col,
+        sep=','
     )
     logging.info("Done!\n")
 
@@ -66,14 +70,20 @@ if __name__ == "__main__":
         corpus=df_train[args.text_col].tolist(),
         config=config['vectorizer']
     )
+
+    embedding.save(
+        dir=args.checkpoint_dir
+    )
+
     model_config['embedding_dim'] = embedding.embedding_dim
     model_config['len_train'] = len(df_train)
     model_config['len_val'] = len(df_val)
-    
+
     logging.info("Vectorizer: {}".format(args.vectorizer))
     logging.info("Embedding dimension: {}".format(embedding.embedding_dim))
     labels = sorted(set(df_train[args.label_col]))
     label2idx = dict(zip(labels, range(len(labels))))
+    model_config['num_labels'] = len(label2idx)
 
     # Create dataloader
     train_dataset = Dataset(
@@ -91,7 +101,7 @@ if __name__ == "__main__":
     valid_dataset = Dataset(
         df=df_val,
         text_col=args.text_col,
-        label_col=args.label_col    
+        label_col=args.label_col
     )
     valid_dataloader = DataLoader(
         valid_dataset,
@@ -100,26 +110,24 @@ if __name__ == "__main__":
         batch_size=model_config['batch_size']
     )
 
-    if args.checkpoint_path != None:
+    if args.checkpoint_path is not None:
         # Training from old checkpoint
         state = torch.load(args.checkpoint_path, map_location=device)
         trainer = Trainer(
-            label2idx=state['label2idx'],
             config=model_config
         )
         trainer.encoder.load_state_dict(state['state_dict'])
 
     else:
         trainer = Trainer(
-            config=model_config,
-            label2idx=label2idx
+            config=model_config
         )
 
     trainer = Trainer(
-        label2idx=label2idx,
         config=model_config
     )
     trainer.train(
         train_dataloader=train_dataloader,
-        val_dataloader=valid_dataloader
+        val_dataloader=valid_dataloader,
+        label2idx=label2idx
     )
